@@ -1,29 +1,37 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text;
 
 namespace LCS
 {
-	class StringView
+	readonly struct StringView
 	{
-		const int DisplayBytes = 4;
+		readonly public int Index;
+		readonly DataSource DS;
 
-		public int Index;
-		public int Start  => Strings[Index].Start;
-		public int Length => Strings[Index].Length;
-		public int End    => Strings[Index].End;
-		String     String => Strings[Index];
+		public int Start  => DS.Strings[Index].Start;
+		public int Length => DS.Strings[Index].Length;
+		public int End    => DS.Strings[Index].End;
+		String     String => DS.Strings[Index];
 
-		readonly String[] Strings;
-		readonly byte[] Data;
+		public StringView(int i, DataSource ds)
+		{
+			Index = i;
+			DS = ds ?? throw new ArgumentNullException(nameof(ds));
+		}
 
-		public StringView Next => Index != Start ? new StringView(Start, Strings, Data) : null;
+		public StringView Next => new StringView(Start, DS);
 
 		public IEnumerable<StringView> Segments
 		{
 			get
 			{
-				for (var p = Next; p != null; p = p.Next)
+				if (Index == Start) yield break;
+				var p = Next;
+				do {
 					yield return p;
+					p = p.Next;
+				} while (p.Index != p.Start);
 			}
 		}
 
@@ -31,9 +39,9 @@ namespace LCS
 		{
 			get
 			{
-				for (var i = 0; i < Strings.Length; i++)
-					if (Strings[i] == String)
-						yield return new StringView(i, Strings, Data);
+				for (var i = 0; i < DS.Strings.Length; i++)
+					if (DS.Strings[i] == String)
+						yield return new StringView(i, DS);
 			}
 		}
 
@@ -41,49 +49,43 @@ namespace LCS
 		{
 			get
 			{
-				for (var i = 0; i < Strings.Length; i++)
-					if (Strings[i].Start == Start)
-						yield return new StringView(i, Strings, Data);
+				for (var i = 0; i < DS.Strings.Length; i++)
+					if (DS.Strings[i].Start == Start)
+						yield return new StringView(i, DS);
 			}
-		}
-
-		public StringView(int i, String[] strings, byte[] data)
-		{
-			Index = i;
-			Strings = strings;
-			Data = data;
 		}
 
 		public override string ToString()
 		{
-			var s = new StringBuilder();
-			s.Append($"{Index:x}: ");
-			s.Append(String.ToString());
-
-			if (Length > 0)
+			const int Side = 4;
+			var s = new StringBuilder($"{Index:x}: {String.ToString()}");
+			if (DS.Data.Length != 0)
+			{
 				s.Append(" \"");
-
-			var i = Start;
-			if (Length >= DisplayBytes)
-			{
-				for (; i < Start + DisplayBytes; i++)
+				var to = Length;
+				if (to == 0) to = Side * 2; else
+				if (to > Side * 2) to = Side;
+				if (to > DS.Data.Length) to = DS.Data.Length;
+				for (var i = 0; i < to; i++)
 				{
-					s.Append(Data[i].ToString("X2"));
-					s.Append(' ');
+					s.Append(DS.Data[Start + i].ToString("X2"));
+					if (i + 1 < to) s.Append(' ');
 				}
-				if (Length > DisplayBytes * 2)
+				if (to < DS.Data.Length)
 				{
-					s.Append("... ");
-					i = End - DisplayBytes - 1;
+					if (Length > Side * 2 || Length == 0)
+						s.Append(" ...");
+					if (Length > Side * 2)
+					{
+						for (var i = End - Side - 1; i < DS.Data.Length; i++)
+						{
+							s.Append(' ');
+							s.Append(DS.Data[i].ToString("X2"));
+						}
+					}
 				}
-			}
-			for (; i < End; i++)
-			{
-				s.Append(Data[i].ToString("X2"));
-				if (i + 1 < End) s.Append(' ');
-			}
-			if (Length > 0)
 				s.Append('"');
+			}
 			return s.ToString();
 		}
 	}

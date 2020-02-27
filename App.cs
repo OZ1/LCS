@@ -12,6 +12,7 @@ namespace LCS
 	{
 		internal readonly byte[] Data;
 		internal readonly String[] Strings;
+		readonly DataSource DataSource;
 		readonly StringTracker Track = new StringTracker();
 		int Length;
 
@@ -21,6 +22,7 @@ namespace LCS
 		{
 			Data = data;
 			Strings = new String[data.Length];
+			DataSource = new DataSource(Strings, Data);
 		}
 
 		void Initialize()
@@ -94,21 +96,46 @@ namespace LCS
 			thread.Abort();
 
 			Save();
-			Sorted.ToList();
 		}
-		
-		public IEnumerable<StringView> Raw => from i in Enumerable.Range(0, Strings.Length - 1)
-		                                      select new StringView(i, Strings, Data);
-		public IEnumerable<StringView> Sorted
+
+		IEnumerable<int> GetIndices() => Enumerable.Range(0, Strings.Length);
+
+		int[] GetSortedIndices()
+		{
+			var indices = new int[Strings.Length];
+			for (var i = 0; i < indices.Length; i++) indices[i] = i;
+			Array.Sort(Strings, indices);
+			return indices;
+		}
+
+		public IEnumerable<StringSet> StringSets
 		{
 			get
 			{
-				var sorted = (String[])Strings.Clone();
-				Array.Sort(sorted);
-				for (int i = 0; i < sorted.Length; i++)
-					yield return new StringView(i, sorted, Data);
+				if (Strings.Length == 0) yield break;
+				var indices = GetSortedIndices();
+				var source = Strings[indices[0]];
+				var starts = new List<int>() { source.Start };
+				for (var i = 1; i < indices.Length; i++)
+				{
+					if (source != Strings[indices[i]])
+					{
+						yield return new StringSet(source, starts);
+						source = Strings[indices[i]];
+						starts.Clear();
+						continue;
+					}
+					else starts.Add(indices[i]);
+				}
+				if (starts.Count != 0)
+					yield return new StringSet(source, starts);
 			}
 		}
+
+		public IEnumerable<StringSetView> StringSetViews => StringSets.Select(x => new StringSetView(x, DataSource));
+
+		public IEnumerable<StringView> StringViews       => GetIndices()      .Select(i => new StringView(i, DataSource));
+		public IEnumerable<StringView> SortedStringViews => GetSortedIndices().Select(i => new StringView(i, DataSource));
 
 		void Load(string fileName = DefaultStateFileName)
 		{
