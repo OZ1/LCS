@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -14,14 +15,23 @@ namespace LCS
 		internal readonly String[] Strings;
 		readonly DataSource DataSource;
 		readonly StringTracker Track = new StringTracker();
+		readonly LengthStartIndexComparer LengthStartIndexComparer;
+		readonly StartLengthIndexComparer StartLengthIndexComparer;
+		readonly int[] ByLength, ByStart;
 
 		const string DefaultStateFileName = @"result";
 
 		public App(byte[] data)
 		{
+			ByStart = new int[data.Length];
+			for (var i = 0; i < ByStart.Length; i++) ByStart[i] = i;
+			ByLength = (int[])ByStart.Clone();
+
 			Data = data;
 			Strings = new String[data.Length];
-			DataSource = new DataSource(Strings, Data);
+			LengthStartIndexComparer = new LengthStartIndexComparer(Strings);
+			StartLengthIndexComparer = new StartLengthIndexComparer(Strings);
+			DataSource = new DataSource(Strings, Data, ByStart);
 		}
 
 		void Initialize()
@@ -82,6 +92,8 @@ namespace LCS
 				progress.Tracking = trackNew.Count;
 				progress.Length = length;
 			}
+			Array.Sort(ByLength, LengthStartIndexComparer);
+			Array.Sort(ByStart , StartLengthIndexComparer);
 		}
 
 		void Run()
@@ -92,57 +104,31 @@ namespace LCS
 			Save();
 		}
 
-		IEnumerable<int> GetIndices() => Enumerable.Range(0, Strings.Length);
-
-		int[] GetSortedIndices()
-		{
-			var indices = new int[Strings.Length];
-			for (var i = 0; i < indices.Length; i++) indices[i] = i;
-			Array.Sort(indices, (x, y) => Strings[x].CompareTo(Strings[y]));
-			return indices;
-		}
-
 		public IEnumerable<StringSet> StringSets
 		{
 			get
 			{
 				if (Strings.Length == 0) yield break;
-				var indices = GetSortedIndices();
-				var source = Strings[indices[0]];
-				var starts = new List<int>() { source.Start, indices[0] };
-				for (var i = 1; i < indices.Length; i++)
-				{
-					var index = indices[i];
-					if (source != Strings[index])
-					{
-						yield return new StringSet(source, starts);
-						source = Strings[index];
-						starts.Clear();
-						starts.Add(source.Start);
-						starts.Add(index);
-						continue;
-					}
-					else starts.Add(index);
-				}
-				if (starts.Count != 0)
-					yield return new StringSet(source, starts);
+				yield return new StringSet(ByLength[0], DataSource);
+				for (var i = 1; i < ByLength.Length; i++)
+					if (Strings[ByLength[i - 1]] != Strings[ByLength[i]])
+						yield return new StringSet(ByLength[i], DataSource);
 			}
 		}
 
-		public IEnumerable<StringSetView> StringSetViews => StringSets.Select(x => new StringSetView(x, DataSource));
-
-		public IEnumerable<StringView> StringViews       => GetIndices()      .Select(i => new StringView(i, DataSource));
-		public IEnumerable<StringView> SortedStringViews => GetSortedIndices().Select(i => new StringView(i, DataSource));
+		public IEnumerable<StringView> StringViews   => Enumerable.Range(0, Strings.Length).Select(i => new StringView(i, DataSource));
+		public IEnumerable<StringView> ByLengthViews => ByLength                           .Select(i => new StringView(i, DataSource));
+		public IEnumerable<StringView> ByStartViews  => ByStart                            .Select(i => new StringView(i, DataSource));
 
 		void Load(string fileName = DefaultStateFileName)
 		{
-			try
-			{
+			try {
 				using var f = new BinaryReader(File.OpenRead(fileName));
-				for (var i = 0; i < Strings.Length; i++) Strings[i].Start = f.ReadInt32();
+				for (var i = 0; i < Strings.Length; i++) Strings[i].Start  = f.ReadInt32();
 				for (var i = 0; i < Strings.Length; i++) Strings[i].Length = f.ReadInt32();
-			}
-			catch (FileNotFoundException) { return; }
+			} catch (FileNotFoundException) { return; }
+			Array.Sort(ByLength, LengthStartIndexComparer);
+			Array.Sort(ByStart , StartLengthIndexComparer);
 		}
 
 		void Save(string fileName = DefaultStateFileName)

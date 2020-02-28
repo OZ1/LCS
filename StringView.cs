@@ -7,22 +7,30 @@ namespace LCS
 	readonly struct StringView
 	{
 		readonly public int Index;
+		readonly public int Length;
 		readonly DataSource DS;
 
-		public int Start  => DS.Strings[Index].Start;
-		public int Length => DS.Strings[Index].Length;
-		public int End    => DS.Strings[Index].End;
-		String     String => DS.Strings[Index];
+		readonly String     String => DS.Strings[Index];
+		readonly public int Start  => DS.Strings[Index].Start;
+		readonly public int End    => Index + Length;
 
 		public StringView(int i, DataSource ds)
 		{
 			Index = i;
+			Length = ds.Strings[Index].Length;
 			DS = ds ?? throw new ArgumentNullException(nameof(ds));
 		}
 
-		public StringView Next => new StringView(Start, DS);
+		public StringView(int i, int length, DataSource ds)
+		{
+			Index = i;
+			Length = length;
+			DS = ds ?? throw new ArgumentNullException(nameof(ds));
+		}
 
-		public IEnumerable<StringView> Segments
+		public readonly StringView Next => new StringView(Start, DS);
+
+		public readonly IEnumerable<StringView> Segments
 		{
 			get
 			{
@@ -35,7 +43,7 @@ namespace LCS
 			}
 		}
 
-		public IEnumerable<StringView> Others
+		public readonly IEnumerable<StringView> Others
 		{
 			get
 			{
@@ -45,7 +53,7 @@ namespace LCS
 			}
 		}
 
-		public IEnumerable<StringView> Prefixes
+		public readonly IEnumerable<StringView> Prefixes
 		{
 			get
 			{
@@ -55,10 +63,10 @@ namespace LCS
 			}
 		}
 
-		public override string ToString()
+		public override readonly string ToString()
 		{
 			const int Side = 4;
-			var s = new StringBuilder($"[{Index:x};{End:x}) x {Length:x} > {Start:x}");
+			var s = new StringBuilder($"{Utility.FormatRange(Index, Length)} > {Start:x}");
 			if (DS.Data.Length != 0)
 			{
 				s.Append(" \"");
