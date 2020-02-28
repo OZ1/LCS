@@ -109,10 +109,12 @@ namespace LCS
 			get
 			{
 				if (Strings.Length == 0) yield break;
-				yield return new StringSet(ByLength[0], DataSource);
+				if (Strings[ByLength[0]].Length < 2) yield break;
+				else yield return new StringSet(ByLength[0], DataSource);
 				for (var i = 1; i < ByLength.Length; i++)
 					if (Strings[ByLength[i - 1]] != Strings[ByLength[i]])
-						yield return new StringSet(ByLength[i], DataSource);
+						if (Strings[ByLength[i]].Length < 2) yield break;
+						else yield return new StringSet(ByLength[i], DataSource);
 			}
 		}
 
