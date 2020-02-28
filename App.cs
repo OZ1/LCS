@@ -13,7 +13,6 @@ namespace LCS
 		internal readonly byte[] Data;
 		internal readonly String[] Strings;
 		readonly DataSource DataSource;
-		readonly StringTracker Track = new StringTracker();
 
 		const string DefaultStateFileName = @"result";
 
@@ -24,67 +23,64 @@ namespace LCS
 			DataSource = new DataSource(Strings, Data);
 		}
 
-		int Initialize()
-		{
-			var bytes = new int[256];
-			var trackNew = Track[0 & 1];
-			for (var i = 0; i < Data.Length; i++)
-			{
-				var start = bytes[Data[i]] - 1;
-				if (start < 0)
-				{
-					Strings[i].Start = i;
-					bytes[Data[i]] = i + 1;
-				}
-				else
-				{
-					Strings[i].Start = start;
-					trackNew.Add(i);
-				}
-			}
-			return trackNew.Count;
-		}
-
 		void Solve()
 		{
-			var total = Initialize();
-
-			using var progress = new Progress(total);
-
-			var remap = new ReMapDictionary();
-			for (var length = 1; length < Data.Length; length++)
+			var Track = new StringTracker();
 			{
-				var tracking = Track[length & 1 ^ 1];
-				var trackNew = Track[length & 1];
-				if (tracking.Count == 0) break;
-
-				remap.Clear();
-				foreach (var i in tracking)
+				var bytes = new int[256];
+				var initial = Track[0 & 1];
+				for (var i = 0; i < Data.Length; i++)
 				{
-					if (i + length >= Data.Length)
+					var start = bytes[Data[i]] - 1;
+					if (start < 0)
 					{
-						Strings[i].Length = length;
-						trackNew.Free(i);
-					}
-					else if (Data[i + length] == Data[Strings[i].Start + length])
-					{
-						trackNew.Keep(i); // продолжаем отслѣживать
-					}
-					else if (remap.TryAdd(Strings[i].Start, Data[i + length], i, out var start))
-					{
-						Strings[i].Length = length; // предыдущий сегмент
-						trackNew.Free(i);
+						Strings[i].Start = i;
+						bytes[Data[i]] = i + 1;
 					}
 					else
 					{
-						Strings[i].Start = start; // перескок на другую вѣтвь
-						trackNew.Keep(i);
+						Strings[i].Start = start;
+						initial.Add(i);
 					}
 				}
-				tracking.Clear();
+			}
+			using var progress = new Progress(Track[0 & 1].Count);
+			{
+				var remap = new ReMapDictionary();
+				for (var length = 1; length < Data.Length; length++)
+				{
+					var tracking = Track[length & 1 ^ 1];
+					var trackNew = Track[length & 1];
+					if (tracking.Count == 0) break;
 
-				progress.Tracking = trackNew.Count;
-				progress.Length = length;
+					remap.Clear();
+					foreach (var i in tracking)
+					{
+						if (i + length >= Data.Length)
+						{
+							Strings[i].Length = length;
+							trackNew.Free(i);
+						}
+						else if (Data[i + length] == Data[Strings[i].Start + length])
+						{
+							trackNew.Keep(i); // продолжаем отслѣживать
+						}
+						else if (remap.TryAdd(Strings[i].Start, Data[i + length], i, out var start))
+						{
+							Strings[i].Length = length; // предыдущий сегмент
+							trackNew.Free(i);
+						}
+						else
+						{
+							Strings[i].Start = start; // перескок на другую вѣтвь
+							trackNew.Keep(i);
+						}
+					}
+					tracking.Clear();
+
+					progress.Tracking = trackNew.Count;
+					progress.Length = length;
+				}
 			}
 		}
 

@@ -11,7 +11,7 @@ namespace LCS
 		public class List : List<int>
 		{
 			public void Keep(int i) => Add(i);
-			public void Free(int i) { }
+			public void Free(int _) { }
 		}
 	}
 
@@ -21,7 +21,7 @@ namespace LCS
 
 		readonly HashSet<int> Removed = new HashSet<int>();
 
-		public void Keep(int i) { }
+		public void Keep(int _) { }
 		public void Free(int i) => Removed.Add(i);
 		public new void Clear()
 		{
@@ -36,7 +36,7 @@ namespace LCS
 
 		readonly HashSet<int> Removed = new HashSet<int>();
 
-		public void Keep(int i) { }
+		public void Keep(int _) { }
 		public void Free(int i) => Removed.Add(i);
 		public new void Clear()
 		{
@@ -48,6 +48,6 @@ namespace LCS
 	static class StringTrackerExtensions
 	{
 		public static void Keep(this List<int> t, int i) => t.Add(i);
-		public static void Free(this List<int> t, int i) { }
+		public static void Free(this List<int> _1, int _2) { }
 	}
 }
