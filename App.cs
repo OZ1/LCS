@@ -46,43 +46,41 @@ namespace LCS
 
 		void Solve()
 		{
+			var remap = new ReMapDictionary();
 			using var progress = new Progress(Track[0 & 1].Count);
+			for (var length = 1; length < Data.Length; length++)
 			{
-				var remap = new ReMapDictionary();
-				for (var length = 1; length < Data.Length; length++)
+				var tracking = Track[length & 1 ^ 1];
+				var trackNew = Track[length & 1];
+				if (tracking.Count == 0) break;
+
+				remap.Clear();
+				foreach (var i in tracking)
 				{
-					var tracking = Track[length & 1 ^ 1];
-					var trackNew = Track[length & 1];
-					if (tracking.Count == 0) break;
-
-					remap.Clear();
-					foreach (var i in tracking)
+					if (i + length >= Data.Length)
 					{
-						if (i + length >= Data.Length)
-						{
-							Strings[i].Length = length;
-							trackNew.Free(i);
-						}
-						else if (Data[i + length] == Data[Strings[i].Start + length])
-						{
-							trackNew.Keep(i); // продолжаем отслѣживать
-						}
-						else if (remap.TryAdd(Strings[i].Start, Data[i + length], i, out var start))
-						{
-							Strings[i].Length = length; // предыдущий сегмент
-							trackNew.Free(i);
-						}
-						else
-						{
-							Strings[i].Start = start; // перескок на другую вѣтвь
-							trackNew.Keep(i);
-						}
+						Strings[i].Length = length;
+						trackNew.Free(i);
 					}
-					tracking.Clear();
-
-					progress.Tracking = trackNew.Count;
-					progress.Length = length;
+					else if (Data[i + length] == Data[Strings[i].Start + length])
+					{
+						trackNew.Keep(i); // продолжаем отслѣживать
+					}
+					else if (remap.TryAdd(Strings[i].Start, Data[i + length], i, out var start))
+					{
+						Strings[i].Length = length; // предыдущий сегмент
+						trackNew.Free(i);
+					}
+					else
+					{
+						Strings[i].Start = start; // перескок на другую вѣтвь
+						trackNew.Keep(i);
+					}
 				}
+				tracking.Clear();
+
+				progress.Tracking = trackNew.Count;
+				progress.Length = length;
 			}
 		}
 
@@ -100,7 +98,7 @@ namespace LCS
 		{
 			var indices = new int[Strings.Length];
 			for (var i = 0; i < indices.Length; i++) indices[i] = i;
-			Array.Sort(Strings, indices);
+			Array.Sort(indices, (x, y) => Strings[x].CompareTo(Strings[y]));
 			return indices;
 		}
 
@@ -151,7 +149,7 @@ namespace LCS
 			for (var i = 0; i < Strings.Length; i++) f.Write(Strings[i].Length);
 		}
 
-		public override string ToString() => $"Lenth = {Strings.Max(x => x.Length):x}";
+		public override string ToString() => $"Length = {Strings.Max(x => x.Length):x}";
 
 		static void Main(string[] args) => new App(File.ReadAllBytes(args[0])).Run();
 	}
