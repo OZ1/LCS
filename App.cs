@@ -14,7 +14,6 @@ namespace LCS
 		internal readonly String[] Strings;
 		readonly DataSource DataSource;
 		readonly StringTracker Track = new StringTracker();
-		int Length;
 
 		const string DefaultStateFileName = @"result";
 
@@ -25,7 +24,7 @@ namespace LCS
 			DataSource = new DataSource(Strings, Data);
 		}
 
-		void Initialize()
+		int Initialize()
 		{
 			var bytes = new int[256];
 			var trackNew = Track[0 & 1];
@@ -43,33 +42,37 @@ namespace LCS
 					trackNew.Add(i);
 				}
 			}
-			Length = 1;
+			return trackNew.Count;
 		}
 
 		void Solve()
 		{
+			var total = Initialize();
+
+			using var progress = new Progress(total);
+
 			var remap = new ReMapDictionary();
-			for (Length = 1; Length < Data.Length; Length++)
+			for (var length = 1; length < Data.Length; length++)
 			{
-				var tracking = Track[Length & 1 ^ 1];
-				var trackNew = Track[Length & 1];
+				var tracking = Track[length & 1 ^ 1];
+				var trackNew = Track[length & 1];
 				if (tracking.Count == 0) break;
 
 				remap.Clear();
 				foreach (var i in tracking)
 				{
-					if (i + Length >= Data.Length)
+					if (i + length >= Data.Length)
 					{
-						Strings[i].Length = Length;
+						Strings[i].Length = length;
 						trackNew.Free(i);
 					}
-					else if (Data[i + Length] == Data[Strings[i].Start + Length])
+					else if (Data[i + length] == Data[Strings[i].Start + length])
 					{
 						trackNew.Keep(i); // продолжаем отслѣживать
 					}
-					else if (remap.TryAdd(Strings[i].Start, Data[i + Length], i, out var start))
+					else if (remap.TryAdd(Strings[i].Start, Data[i + length], i, out var start))
 					{
-						Strings[i].Length = Length; // предыдущий сегмент
+						Strings[i].Length = length; // предыдущий сегмент
 						trackNew.Free(i);
 					}
 					else
@@ -79,22 +82,16 @@ namespace LCS
 					}
 				}
 				tracking.Clear();
+
+				progress.Tracking = trackNew.Count;
+				progress.Length = length;
 			}
 		}
 
 		void Run()
 		{
 			Load();
-
-			Initialize();
-
-			var thread = new Thread(ProgressProc) { IsBackground = true };
-			thread.Start();
-
 			Solve();
-
-			thread.Abort();
-
 			Save();
 		}
 
@@ -155,19 +152,7 @@ namespace LCS
 			for (var i = 0; i < Strings.Length; i++) f.Write(Strings[i].Length);
 		}
 
-		void ProgressProc()
-		{
-			var t0 = DateTime.Now;
-			for (var n1 = Max(Track[0].Count, Track[1].Count); n1 != 0;)
-			{
-				var n2 = Max(Track[0].Count, Track[1].Count);
-				Console.WriteLine($"{Length}: {n2} - {n1 - n2}" + " за " + (DateTime.Now - t0).TotalSeconds);
-				Thread.Sleep(200);
-				n1 = n2;
-			}
-		}
-
-		public override string ToString() => $"{Length}, Track={Max(Track[0].Count, Track[1].Count)}";
+		public override string ToString() => $"Lenth = {Strings.Max(x => x.Length):x}";
 
 		static void Main(string[] args) => new App(File.ReadAllBytes(args[0])).Run();
 	}
