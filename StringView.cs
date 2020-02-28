@@ -58,7 +58,7 @@ namespace LCS
 		public override string ToString()
 		{
 			const int Side = 4;
-			var s = new StringBuilder($"{Index:x}: {String.ToString()}");
+			var s = new StringBuilder($"[{Index:x};{End:x}) x {Length:x} > {Start:x}");
 			if (DS.Data.Length != 0)
 			{
 				s.Append(" \"");
@@ -77,7 +77,7 @@ namespace LCS
 						s.Append(" ...");
 					if (Length > Side * 2)
 					{
-						for (var i = End - Side - 1; i < DS.Data.Length; i++)
+						for (var i = End - Side - 1; i < End; i++)
 						{
 							s.Append(' ');
 							s.Append(DS.Data[i].ToString("X2"));

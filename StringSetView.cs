@@ -28,7 +28,7 @@ namespace LCS
 
 		public override string ToString()
 		{
-			return StringSet.Source.ToString();
+			return new StringView(StringSet.Source.Start, DS).ToString();
 		}
 	}
 }

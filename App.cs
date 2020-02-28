@@ -109,17 +109,20 @@ namespace LCS
 				if (Strings.Length == 0) yield break;
 				var indices = GetSortedIndices();
 				var source = Strings[indices[0]];
-				var starts = new List<int>() { source.Start };
+				var starts = new List<int>() { source.Start, indices[0] };
 				for (var i = 1; i < indices.Length; i++)
 				{
-					if (source != Strings[indices[i]])
+					var index = indices[i];
+					if (source != Strings[index])
 					{
 						yield return new StringSet(source, starts);
-						source = Strings[indices[i]];
+						source = Strings[index];
 						starts.Clear();
+						starts.Add(source.Start);
+						starts.Add(index);
 						continue;
 					}
-					else starts.Add(indices[i]);
+					else starts.Add(index);
 				}
 				if (starts.Count != 0)
 					yield return new StringSet(source, starts);

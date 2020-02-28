@@ -15,6 +15,6 @@ namespace LCS
 			Starts = starts.ToArray();
 		}
 
-		public override string ToString() => $"{Source} {Starts}";
+		public override string ToString() => $"{Source}, Count = {Starts.Length}";
 	}
 }
