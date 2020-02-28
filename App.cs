@@ -13,6 +13,7 @@ namespace LCS
 		internal readonly byte[] Data;
 		internal readonly String[] Strings;
 		readonly DataSource DataSource;
+		readonly StringTracker Track = new StringTracker();
 
 		const string DefaultStateFileName = @"result";
 
@@ -23,27 +24,28 @@ namespace LCS
 			DataSource = new DataSource(Strings, Data);
 		}
 
-		void Solve()
+		void Initialize()
 		{
-			var Track = new StringTracker();
+			var bytes = new int[256];
+			var initial = Track[0 & 1];
+			for (var i = 0; i < Data.Length; i++)
 			{
-				var bytes = new int[256];
-				var initial = Track[0 & 1];
-				for (var i = 0; i < Data.Length; i++)
+				var start = bytes[Data[i]] - 1;
+				if (start < 0)
 				{
-					var start = bytes[Data[i]] - 1;
-					if (start < 0)
-					{
-						Strings[i].Start = i;
-						bytes[Data[i]] = i + 1;
-					}
-					else
-					{
-						Strings[i].Start = start;
-						initial.Add(i);
-					}
+					Strings[i].Start = i;
+					bytes[Data[i]] = i + 1;
+				}
+				else
+				{
+					Strings[i].Start = start;
+					initial.Add(i);
 				}
 			}
+		}
+
+		void Solve()
+		{
 			using var progress = new Progress(Track[0 & 1].Count);
 			{
 				var remap = new ReMapDictionary();
@@ -87,6 +89,7 @@ namespace LCS
 		void Run()
 		{
 			Load();
+			Initialize();
 			Solve();
 			Save();
 		}
