@@ -3,6 +3,16 @@ using System.Collections.Generic;
 
 namespace LCS
 {
+	readonly struct StringOverlapComparer : IComparer<String>
+	{
+		public int Compare(String x, String y)
+		{
+			if (x.End <= y.Start) return -1;
+			if (y.End <= x.Start) return +1;
+			return 0;
+		}
+	}
+
 	readonly struct LengthStartIndexComparer : IComparer<int>
 	{
 		readonly String[] Strings;

@@ -65,33 +65,14 @@ namespace LCS
 
 		public override readonly string ToString()
 		{
-			const int Side = 4;
-			var s = new StringBuilder($"{Utility.FormatRange(Index, Length)} > {Start:x}");
+			var s = new StringBuilder();
+			s.Append(Utility.FormatRange(Index, Length));
+			s.Append($" > {Start:x}");
 			if (DS.Data.Length != 0)
 			{
-				s.Append(" \"");
-				var to = Length;
-				if (to == 0) to = Side * 2; else
-				if (to > Side * 2) to = Side;
-				if (to > DS.Data.Length) to = DS.Data.Length;
-				for (var i = 0; i < to; i++)
-				{
-					s.Append(DS.Data[Start + i].ToString("X2"));
-					if (i + 1 < to) s.Append(' ');
-				}
-				if (to < DS.Data.Length)
-				{
-					if (Length > Side * 2 || Length == 0)
-						s.Append(" ...");
-					if (Length > Side * 2)
-					{
-						for (var i = End - Side - 1; i < End; i++)
-						{
-							s.Append(' ');
-							s.Append(DS.Data[i].ToString("X2"));
-						}
-					}
-				}
+				s.Append(' ');
+				s.Append('"');
+				s.Append(Utility.FormatData(DS.Data, Start, Length));
 				s.Append('"');
 			}
 			return s.ToString();

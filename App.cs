@@ -99,9 +99,17 @@ namespace LCS
 		void Run()
 		{
 			Load();
-			Initialize();
-			Solve();
-			Save();
+		//	Initialize();
+		//	Solve();
+		//	Save();
+			foreach (var set in NonOverlappingStringSets)
+			{
+				if (set.Length < 4) break;
+				if (set.Data.All(x => x == 0 || x == 0xFF)) continue;
+				Console.WriteLine($"{set.Length:x}\t"
+					+ Utility.FormatData(Data, set.Index, set.Length) + "\t"
+					+ string.Join(" ", set.Starts.Select(x => x.ToString("x"))));
+			}
 		}
 
 		public IEnumerable<StringSet> StringSets
@@ -138,6 +146,23 @@ namespace LCS
 			using var f = new BinaryWriter(File.OpenWrite(fileName));
 			for (var i = 0; i < Strings.Length; i++) f.Write(Strings[i].Start);
 			for (var i = 0; i < Strings.Length; i++) f.Write(Strings[i].Length);
+		}
+
+		public IEnumerable<StringSet> NonOverlappingStringSets
+		{
+			get
+			{
+				var ranges = new SortedSet<String>(new StringOverlapComparer());
+				foreach (var set in StringSets)
+				{
+					var source = set.Source;
+					if (ranges.Contains(source)) continue;
+				//	var overlap = ranges.GetViewBetween(source, source);
+				//	if (overlap.Count != 0) continue;
+					ranges.Add(source);
+					yield return set;
+				}
+			}
 		}
 
 		public override string ToString() => $"Length = {Strings.Max(x => x.Length):x}";
