@@ -108,7 +108,7 @@ namespace LCS
 				if (set.Data.All(x => x == 0 || x == 0xFF)) continue;
 				Console.WriteLine($"{set.Length:x}\t"
 					+ Utility.FormatData(Data, set.Index, set.Length) + "\t"
-					+ string.Join(" ", set.Starts.Select(x => x.ToString("x"))));
+					+ string.Join(" ", set.Starts.Select(x => $"[{x:x};{x + set.Length:x})")));
 			}
 		}
 
